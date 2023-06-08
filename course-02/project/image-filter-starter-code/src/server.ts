@@ -26,12 +26,12 @@ import { isValidUrl } from "./util/validation";
         return res.status(422).send("Invalid image url");
       }
 
-      const filteredImages: string[] = [];
-      const filteredImage: string = await filterImageFromURL(image_url);
-      filteredImages.push(filteredImage);
+      const filteredImagePaths: string[] = [];
+      const filteredImagePath: string = await filterImageFromURL(image_url);
+      filteredImagePaths.push(filteredImagePath);
 
-      return res.status(200).sendFile(filteredImage, (err) => {
-        deleteLocalFiles(filteredImages);
+      return res.status(200).sendFile(filteredImagePath, (err) => {
+        deleteLocalFiles(filteredImagePaths);
         if (err) {
           next(new Error("Error sending file"));
         }
