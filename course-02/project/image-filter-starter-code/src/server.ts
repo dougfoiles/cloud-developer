@@ -1,7 +1,7 @@
-import express, { Router, Request, Response } from "express";
+import express, { Router, Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
 import { filterImageFromURL, deleteLocalFiles } from "./util/util";
-import { isValidUrl } from "./util/validator";
+import { isValidUrl } from "./util/validation";
 
 (async () => {
   // Init the Express application
@@ -13,28 +13,31 @@ import { isValidUrl } from "./util/validator";
   // Use the body parser middleware for post requests
   app.use(bodyParser.json());
 
-  app.get("/filteredimage", async (req, res, next) => {
-    let { image_url } = req.query;
+  app.get(
+    "/filteredimage",
+    async (req: Request, res: Response, next: NextFunction) => {
+      let { image_url } = req.query;
 
-    if (!image_url) {
-      return res.status(400).send(`Image url is required`);
-    }
-
-    if (!isValidUrl(image_url)) {
-      return res.status(422).send("Invalid image url");
-    }
-
-    const filteredImages: string[] = [];
-    const filteredImage: string = await filterImageFromURL(image_url);
-    filteredImages.push(filteredImage);
-
-    return res.status(200).sendFile(filteredImage, (err) => {
-      deleteLocalFiles(filteredImages);
-      if (err) {
-        next(new Error("Error sending file"));
+      if (!image_url) {
+        return res.status(400).send(`Image url is required`);
       }
-    });
-  });
+
+      if (!isValidUrl(image_url)) {
+        return res.status(422).send("Invalid image url");
+      }
+
+      const filteredImages: string[] = [];
+      const filteredImage: string = await filterImageFromURL(image_url);
+      filteredImages.push(filteredImage);
+
+      return res.status(200).sendFile(filteredImage, (err) => {
+        deleteLocalFiles(filteredImages);
+        if (err) {
+          next(new Error("Error sending file"));
+        }
+      });
+    }
+  );
 
   // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
   // GET /filteredimage?image_url={{URL}}
