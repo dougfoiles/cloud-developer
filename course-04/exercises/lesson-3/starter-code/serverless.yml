@@ -28,6 +28,7 @@ provider:
     - Effect: Allow
       Action:
         - dynamodb:Query
+        - dynamodb:PutItem
       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}
     - Effect: Allow
       Action:
@@ -45,9 +46,11 @@ custom:
       - name: GroupRequest
         contentType: application/json
         schema: ${file(models/create-group-request.json)}
+        - name: GroupRequest
+        contentType: application/json
+        schema: ${file(models/create-group-request.json)}
 
 functions:
-
   GetGroups:
     handler: src/lambda/http/getGroups.handler
     events:
@@ -68,7 +71,7 @@ functions:
             summary: Create a new group
             description: Create a new group
             requestModels:
-              'application/json': GroupRequest
+              "application/json": GroupRequest
 
   GetImages:
     handler: src/lambda/http/getImages.handler
@@ -77,6 +80,9 @@ functions:
           method: get
           path: groups/{groupId}/images
           cors: true
+  
+  CreateImage:
+    handler: src/lambda/http/createImage.handler
 
   CreateImage:
     handler: src/lambda/http/createImage.handler
@@ -115,17 +121,16 @@ resources:
         GlobalSecondaryIndexes:
           - IndexName: ${self:provider.environment.IMAGE_ID_INDEX}
             KeySchema:
-            - AttributeName: imageId
-              KeyType: HASH
+              - AttributeName: imageId
+                KeyType: HASH
             Projection:
               ProjectionType: ALL
 
     RequestBodyValidator:
       Type: AWS::ApiGateway::RequestValidator
       Properties:
-        Name: 'request-body-validator'
+        Name: "request-body-validator"
         RestApiId:
           Ref: ApiGatewayRestApi
         ValidateRequestBody: true
         ValidateRequestParameters: false
-

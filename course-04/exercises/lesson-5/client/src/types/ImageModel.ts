@@ -1,7 +1,7 @@
 export interface ImageModel {
-  groupId: string
-  timestamp: string
-  title: string
-  imageId: string
-  imageUrl: string
+  groupId: { S: string };
+  timestamp: { S: string };
+  title: { S: string };
+  imageId: { S: string };
+  imageUrl: { S: string };
 }

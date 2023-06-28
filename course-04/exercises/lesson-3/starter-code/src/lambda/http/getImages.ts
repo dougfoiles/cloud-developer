@@ -1,66 +1,86 @@
-import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import 'source-map-support/register'
-import * as AWS  from 'aws-sdk'
+import {
+  APIGatewayProxyHandler,
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+} from "aws-lambda";
+import "source-map-support/register";
+import {
+  DynamoDBClient,
+  QueryCommand,
+  GetItemCommand,
+} from "@aws-sdk/client-dynamodb";
 
-const docClient = new AWS.DynamoDB.DocumentClient()
+const docClient = new DynamoDBClient({});
 
-const groupsTable = process.env.GROUPS_TABLE
-const imagesTable = process.env.IMAGES_TABLE
+const groupsTable = process.env.GROUPS_TABLE;
+const imagesTable = process.env.IMAGES_TABLE;
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-
-  console.log('Caller event', event)
-  const groupId = event.pathParameters.groupId
-  const validGroupId = await groupExists(groupId)
+export const handler: APIGatewayProxyHandler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+  console.log("Caller event", event);
+  const groupId = event.pathParameters.groupId;
+  const validGroupId = await groupExists(groupId);
 
   if (!validGroupId) {
     return {
       statusCode: 404,
       headers: {
-        'Access-Control-Allow-Origin': '*'
+        "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify({
-        error: 'Group does not exist'
-      })
-    }
+        error: "Group does not exist",
+      }),
+    };
   }
 
-  const images = await getImagesPerGroup(groupId)
+  const images = await getImagesPerGroup(groupId);
 
   return {
     statusCode: 201,
     headers: {
-      'Access-Control-Allow-Origin': '*'
+      "Access-Control-Allow-Origin": "*",
     },
     body: JSON.stringify({
-      items: images
-    })
-  }
-}
+      items: images,
+    }),
+  };
+};
 
 async function groupExists(groupId: string) {
-  const result = await docClient
-    .get({
-      TableName: groupsTable,
-      Key: {
-        id: groupId
-      }
-    })
-    .promise()
+  const command = new GetItemCommand({
+    TableName: groupsTable,
+    Key: {
+      id: { S: groupId },
+    },
+  });
 
-  console.log('Get group: ', result)
-  return !!result.Item
+  const result = await docClient.send(command);
+
+  console.log("Get group: ", result);
+  return !!result.Item;
 }
 
 async function getImagesPerGroup(groupId: string) {
-  const result = await docClient.query({
+  const command = new QueryCommand({
     TableName: imagesTable,
-    KeyConditionExpression: 'groupId = :groupId',
+    KeyConditionExpression: "groupId = :groupId",
     ExpressionAttributeValues: {
-      ':groupId': groupId
+      ":groupId": { S: groupId },
     },
-    ScanIndexForward: false
-  }).promise()
+    ScanIndexForward: false,
+  });
 
-  return result.Items
+  const result = await docClient.send(command);
+
+  //   const result = await docClient.query({
+  //     TableName: imagesTable,
+  //     KeyConditionExpression: 'groupId = :groupId',
+  //   ExpressionAttributeValues: {
+  //     ':groupId': groupId
+  //   },
+  //   ScanIndexForward: false
+  //   }).promise()
+
+  return result.Items;
 }
