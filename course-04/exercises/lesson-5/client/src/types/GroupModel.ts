@@ -1,5 +1,5 @@
 export interface GroupModel {
-  id: string
-  name: string
-  description: string
+  id: { S: string };
+  name: { S: string };
+  description: { S: string };
 }

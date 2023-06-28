@@ -1,34 +1,44 @@
-import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import 'source-map-support/register'
-import * as AWS  from 'aws-sdk'
-import * as uuid from 'uuid'
+import {
+  APIGatewayProxyHandler,
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+} from "aws-lambda";
+import "source-map-support/register";
+import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import * as uuid from "uuid";
 
-const docClient = new AWS.DynamoDB.DocumentClient()
-const groupsTable = process.env.GROUPS_TABLE
+const docClient = new DynamoDBClient({});
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log('Processing event: ', event)
-  const itemId = uuid.v4()
+const groupsTable = process.env.GROUPS_TABLE;
 
-  const parsedBody = JSON.parse(event.body)
+export const handler: APIGatewayProxyHandler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+  console.log("Processing event: ", event);
+  const itemId = uuid.v4();
+
+  const parsedBody = JSON.parse(event.body);
 
   const newItem = {
-    id: itemId,
-    ...parsedBody
-  }
+    id: { S: itemId },
+    name: { S: parsedBody.name },
+    description: { S: parsedBody.description },
+  };
 
-  await docClient.put({
+  const command = new PutItemCommand({
     TableName: groupsTable,
-    Item: newItem
-  }).promise()
+    Item: newItem,
+  });
+
+  await docClient.send(command);
 
   return {
     statusCode: 201,
     headers: {
-      'Access-Control-Allow-Origin': '*'
+      "Access-Control-Allow-Origin": "*",
     },
     body: JSON.stringify({
-      newItem
-    })
-  }
-}
+      newItem,
+    }),
+  };
+};

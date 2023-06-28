@@ -1,21 +1,21 @@
-import * as React from 'react'
-import { ImageModel } from '../types/ImageModel'
-import { getImages } from '../api/images-api'
-import { Card, Divider, Button } from 'semantic-ui-react'
-import { UdagramImage } from './UdagramImage'
-import { History } from 'history'
+import * as React from "react";
+import { ImageModel } from "../types/ImageModel";
+import { getImages } from "../api/images-api";
+import { Card, Divider, Button } from "semantic-ui-react";
+import { UdagramImage } from "./UdagramImage";
+import { History } from "history";
 
 interface ImagesListProps {
-  history: History
+  history: History;
   match: {
     params: {
-      groupId: string
-    }
-  }
+      groupId: string;
+    };
+  };
 }
 
 interface ImagesListState {
-  images: ImageModel[]
+  images: ImageModel[];
 }
 
 export class ImagesList extends React.PureComponent<
@@ -23,21 +23,23 @@ export class ImagesList extends React.PureComponent<
   ImagesListState
 > {
   state: ImagesListState = {
-    images: []
-  }
+    images: [],
+  };
 
   handleCreateImage = () => {
-    this.props.history.push(`/images/${this.props.match.params.groupId}/create`)
-  }
+    this.props.history.push(
+      `/images/${this.props.match.params.groupId}/create`
+    );
+  };
 
   async componentDidMount() {
     try {
-      const images = await getImages(this.props.match.params.groupId)
+      const images = await getImages(this.props.match.params.groupId);
       this.setState({
-        images
-      })
+        images,
+      });
     } catch (e) {
-      alert(`Failed to fetch images for group : ${e.message}`)
+      alert(`Failed to fetch images for group : ${e.message}`);
     }
   }
 
@@ -58,11 +60,11 @@ export class ImagesList extends React.PureComponent<
         <Divider clearing />
 
         <Card.Group>
-          {this.state.images.map(image => {
-            return <UdagramImage key={image.imageId} image={image} />
+          {this.state.images.map((image) => {
+            return <UdagramImage key={image.imageId.S} image={image} />;
           })}
         </Card.Group>
       </div>
-    )
+    );
   }
 }

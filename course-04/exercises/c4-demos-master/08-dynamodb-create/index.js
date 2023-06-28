@@ -1,26 +1,28 @@
-'use strict'
+import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb'
+import uuid from 'uuid'
 
-const AWS = require('aws-sdk')
-const uuid = require('uuid')
+const docClient = new DynamoDBClient({ region: 'us-east-1' })
 
-const docClient = new AWS.DynamoDB.DocumentClient()
 const groupsTable = process.env.GROUPS_TABLE
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log('Processing event: ', event)
   const itemId = uuid.v4()
 
   const parsedBody = JSON.parse(event.body)
 
   const newItem = {
-    id: itemId,
-    ...parsedBody
+    id: { S: itemId },
+    name: { S: parsedBody.name },
+    description: { S: parsedBody.description }
   }
 
-  await docClient.put({
+  const command = new PutItemCommand({
     TableName: groupsTable,
     Item: newItem
-  }).promise()
+  })
+
+  await docClient.send(command)
 
   return {
     statusCode: 201,
