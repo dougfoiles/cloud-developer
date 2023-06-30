@@ -61,15 +61,19 @@ async function verifyToken(
 ): Promise<JwtPayload> {
   const token = getToken(authHeader)
   const jwt: Jwt = decode(token, { complete: true }) as Jwt
+  let certValue
 
-  const response = await Axios.get(jwksUrl)
-  if (response.status !== 200) throw new Error('Failed to fetch jwks')
+  try {
+    const response = await Axios.get(jwksUrl)
 
-  const keys = response.data.keys
+    const keys = response.data.keys
 
-  const certValue = keys.find((key) => {
-    return key.kid === jwt.header.kid
-  })
+    certValue = keys.find((key) => {
+      return key.kid === jwt.header.kid
+    })
+  } catch (e) {
+    throw new Error('Error getting auth0 certificate')
+  }
 
   const cert = `-----BEGIN CERTIFICATE-----\n${certValue.x5c}\n-----END CERTIFICATE-----`
 
