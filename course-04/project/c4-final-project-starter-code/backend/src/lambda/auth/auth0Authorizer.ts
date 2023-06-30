@@ -9,17 +9,18 @@ import { JwtPayload } from '../../auth/JwtPayload'
 
 const logger = createLogger('auth')
 
-// TODO: Provide a URL that can be used to download a certificate that can be used
+//TODO: make this URL and evnrionment variable
 // to verify JWT token signature.
 // To get this URL you need to go to an Auth0 page -> Show Advanced Settings -> Endpoints -> JSON Web Key Set
-const jwksUrl = '...'
+const jwksUrl =
+  'https://dev-yy75jzfl6v4glka1.us.auth0.com/.well-known/jwks.json'
 
 export const handler = async (
   event: CustomAuthorizerEvent
 ): Promise<CustomAuthorizerResult> => {
   logger.info('Authorizing a user', event.authorizationToken)
   try {
-    const jwtToken = await verifyToken(event.authorizationToken)
+    const jwtToken = await verifyToken(event.authorizationToken, jwksUrl)
     logger.info('User was authorized', jwtToken)
 
     return {
@@ -54,14 +55,27 @@ export const handler = async (
   }
 }
 
-async function verifyToken(authHeader: string): Promise<JwtPayload> {
+async function verifyToken(
+  authHeader: string,
+  jwksUrl: string
+): Promise<JwtPayload> {
   const token = getToken(authHeader)
   const jwt: Jwt = decode(token, { complete: true }) as Jwt
 
-  // TODO: Implement token verification
+  const response = await Axios.get(jwksUrl)
+  if (response.status !== 200) throw new Error('Failed to fetch jwks')
+
+  const keys = response.data.keys
+
+  const certValue = keys.find((key) => {
+    return key.kid === jwt.header.kid
+  })
+
+  const cert = `-----BEGIN CERTIFICATE-----\n${certValue.x5c}\n-----END CERTIFICATE-----`
+
   // You should implement it similarly to how it was implemented for the exercise for the lesson 5
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
-  return undefined
+  return verify(token, cert, { algorithms: ['RS256'] }) as JwtPayload
 }
 
 function getToken(authHeader: string): string {
